@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "MainDialog.h"
+#include "Bypass.h"
 
 #include <shellapi.h>
 
@@ -17,6 +18,7 @@ MainDlg::MainDlg()
     _events[IDC_ADD_MOD] = static_cast<Dialog::fnDlgProc>(&MainDlg::OnLoadImage);
     _events[IDC_REMOVE_MOD] = static_cast<Dialog::fnDlgProc>(&MainDlg::OnRemoveImage);
     _events[IDC_CLEAR_MODS] = static_cast<Dialog::fnDlgProc>(&MainDlg::OnClearImages);
+    _events[IDC_START] = static_cast<Dialog::fnDlgProc>(&MainDlg::OnStart);
 
     _events[IDM_ABOUT] = static_cast<Dialog::fnDlgProc>(&MainDlg::OnAbout);
 }
@@ -33,6 +35,7 @@ INT_PTR MainDlg::OnInit(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     // Setup controls
     //
     _modules.Attach(_hwnd, IDC_MODS);
+    _start.Attach(_hwnd, IDC_START);
 
     // Setup modules view
     _modules.AddColumn(L"Name", 150, 0);
@@ -175,4 +178,10 @@ INT_PTR MainDlg::OnClearImages(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     _start.disable();
 
     return TRUE;
+}
+
+INT_PTR MainDlg::OnStart(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+    bypass->start();
+
+    return 0;
 }

@@ -25,12 +25,19 @@
 #include <strsafe.h>
 #include <stdint.h>
 #include <wchar.h>
+#include <TlHelp32.h>
 
 // C++ RunTime Header Files
 #include <vector>
 #include <string>
 #include <map>
 #include <memory>
+#include <algorithm>
+#include <thread>
+#include <chrono>
+
+//can just type 25ms instead of longer stuff
+using namespace std::chrono_literals;
 
 // Manifest (for modern look on gui)
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")

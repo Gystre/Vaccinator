@@ -89,8 +89,7 @@ DWORD MainDlg::LoadImageFile(const std::wstring& path)
     AddToModuleList(img);
     _exports.emplace_back(exports);
 
-    //if (_procList.selection() != -1)
-    //    _inject.enable();
+    _start.enable();
 
     img->Release(true);
     return ERROR_SUCCESS;

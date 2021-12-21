@@ -28,6 +28,9 @@
     <Filter Include="Gui\Controls">
       <UniqueIdentifier>{51e600f2-1ad8-46c9-93db-993a9d6da2de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Hook">
+      <UniqueIdentifier>{27f6ffe5-13e7-4881-b4ae-392d877265bf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -90,6 +93,15 @@
     <ClInclude Include="Message.h">
       <Filter>Gui\Controls</Filter>
     </ClInclude>
+    <ClInclude Include="Bypass.h">
+      <Filter>Hook</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessUtil.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="KY-Vaccinator.cpp">
@@ -109,6 +121,12 @@
     </ClCompile>
     <ClCompile Include="Routines.cpp">
       <Filter>Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="Bypass.cpp">
+      <Filter>Hook</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessUtil.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

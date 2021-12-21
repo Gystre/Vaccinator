@@ -85,6 +85,7 @@ private:
     MSG_HANDLER(OnRemoveImage);
     MSG_HANDLER(OnClearImages);
     MSG_HANDLER(OnDragDrop);
+    MSG_HANDLER(OnStart);
 
     MSG_HANDLER(OnAbout);
 
