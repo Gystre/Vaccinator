@@ -28,7 +28,7 @@
     <Filter Include="Gui\Controls">
       <UniqueIdentifier>{51e600f2-1ad8-46c9-93db-993a9d6da2de}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Hook">
+    <Filter Include="Bypass">
       <UniqueIdentifier>{27f6ffe5-13e7-4881-b4ae-392d877265bf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -94,7 +94,7 @@
       <Filter>Gui\Controls</Filter>
     </ClInclude>
     <ClInclude Include="Bypass.h">
-      <Filter>Hook</Filter>
+      <Filter>Bypass</Filter>
     </ClInclude>
     <ClInclude Include="Logger.h">
       <Filter>Utils</Filter>
@@ -123,7 +123,7 @@
       <Filter>Gui</Filter>
     </ClCompile>
     <ClCompile Include="Bypass.cpp">
-      <Filter>Hook</Filter>
+      <Filter>Bypass</Filter>
     </ClCompile>
     <ClCompile Include="ProcessUtil.cpp">
       <Filter>Utils</Filter>

@@ -6,7 +6,7 @@
 #include <string>
 #include <sstream>
 
-namespace acut
+namespace FileUtil
 {
     template <typename tstring, typename Container>
     void tsplit(const tstring& str,

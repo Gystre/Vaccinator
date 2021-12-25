@@ -10,7 +10,7 @@ bool Config::Save(const std::wstring& path /*= L""*/)
     {
         auto filepath = path.empty() ? (blackbone::Utils::GetExeDirectory() + CURRENT_PROFILE) : path;
 
-        acut::XmlDoc<wchar_t> xml;
+        FileUtil::XmlDoc<wchar_t> xml;
         xml.create_document();
 
         for (auto& imgpath : _config.images)
@@ -33,10 +33,10 @@ bool Config::Load(const std::wstring& path /*= L""*/)
     try
     {
         auto filepath = path.empty() ? (blackbone::Utils::GetExeDirectory() + CURRENT_PROFILE) : path;
-        if (!acut::file_exists(filepath))
+        if (!FileUtil::file_exists(filepath))
             return false;
 
-        acut::XmlDoc<wchar_t> xml;
+        FileUtil::XmlDoc<wchar_t> xml;
         xml.read_from_file(filepath);
 
         // Load images in a safe way

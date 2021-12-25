@@ -13,6 +13,9 @@ namespace ProcessUtil {
 	// Kills target process
 	bool killProcess(const std::vector<std::pair<std::uint32_t, std::wstring>>& vecProcesses, std::wstring_view strProc);
 
+	// wait for process
+	void waitForProcess(std::wstring_view procName);
+
 	// Returns the process id from process name
 	std::uint32_t getProcessIdByName(const std::vector<std::pair<std::uint32_t, std::wstring>>& vecProcceses, std::wstring_view strProc);
 

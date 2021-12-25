@@ -1,11 +1,11 @@
 #include "pch.h"
 #include "MainDialog.h"
 #include "Bypass.h"
+#include "Logger.h"
 
 #include <shellapi.h>
 
 #include <src/BlackBone/Misc/Utils.h>
-
 
 MainDlg::MainDlg()
     : Dialog(IDD_MAIN)
@@ -51,7 +51,6 @@ INT_PTR MainDlg::OnInit(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
     SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
     DestroyIcon(hIcon);
-
 
     // Setup status bar
     _status.Attach(CreateWindowW(STATUSCLASSNAME, L"", WS_CHILD | WS_VISIBLE,
@@ -140,13 +139,13 @@ INT_PTR MainDlg::OnLoadImage(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
     std::wstring path;
     EnableWindow(GetDlgItem(hDlg, IDC_ADD_MOD), FALSE);
     bool res = OpenSaveDialog(
-        L"All (*.*)\0*.*\0Dynamic link library (*.dll)\0*.dll\0System driver (*.sys)\0*.sys\0",
-        2,
+        L"All (*.*)\0*.*\0Dynamic link library (*.dll)\0*.dll\0",
+        2, //the filter that we should default to, .dll
         path
     );
 
-    // Reset init routine upon load
-    LoadImageFile(path);
+    if(res)
+		LoadImageFile(path);
 
     EnableWindow(GetDlgItem(hDlg, IDC_ADD_MOD), TRUE);
     return TRUE;
@@ -181,7 +180,12 @@ INT_PTR MainDlg::OnClearImages(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 }
 
 INT_PTR MainDlg::OnStart(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-    bypass->start();
+    _start.disable();
+    if (!bypass->start()) {
+        logError(L"Uh oh something went wrong :(");
+    }
+    _start.enable();
 
-    return 0;
+
+    return TRUE;
 }

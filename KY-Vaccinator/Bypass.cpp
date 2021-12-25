@@ -2,6 +2,9 @@
 #include "Bypass.h"
 #include "Logger.h"
 #include "ProcessUtil.h"
+#include "FileUtil.h"
+#include "MainDialog.h"
+#include <src/BlackBone/Process/Process.h>
 
 bool Bypass::start() {
 	logDebug(L"Closing processes");
@@ -56,9 +59,47 @@ bool Bypass::start() {
 		return false;
 	}
 
-	//function hooking shit aka vac3 stop at root
+	//steamservice.dll hooking
+	std::filesystem::path bypassPath = FileUtil::getCwd() + L"\\SSDestroyer.dll";
 
-	//inject hack dll
+	if (!std::filesystem::exists(bypassPath)) {
+		logError(L"Couldn't find SSDestroyer.dll, make sure it's in the same directory as the exe");
+		return false;
+	}
+
+	std::vector<std::uint8_t> bypassBuffer;
+	if (!FileUtil::readFile(bypassPath, &bypassBuffer)) {
+		logError(L"Failed to load SSDestroyer.dll to memory");
+		return false;
+	}
+
+	if (!map(L"steam.exe", L"tier0_s.dll", bypassBuffer, blackbone::eLoadFlags::WipeHeader)) {
+		logError(L"Mapping the SSDestroyer.dll failed");
+		return false;
+	}
+
+	//wait for game to load
+	ProcessUtil::waitForProcess(L"csgo.exe");
+
+	logDebug(L"Found process, injecting...");
+
+	//load and write all the modules into memory
+	auto images = mainDlg->getImages();
+	std::vector<std::vector<std::uint8_t>> hackBuffer(images.size());
+
+	for (int i = 0; i < images.size(); i++) {
+		if (!FileUtil::readFile(images[i]->path(), &hackBuffer[i])) {
+			logError(L"Failed to load %s to memory", images[i]->name());
+		}
+		if (!map(L"csgo.exe", L"serverbrowser.dll", hackBuffer[i], blackbone::eLoadFlags::WipeHeader)) {
+			logError(L"Failed to map %s to memory", images[i]->name());
+		}
+	}
+	
+	logOk(L"Done!");
+
+    //we're done here, time to leave :D
+    exit(EXIT_SUCCESS);
 
 	return true;
 }
@@ -75,6 +116,121 @@ void Bypass::closeProcesses(std::vector<std::wstring_view> vecProcesses) {
 			std::this_thread::sleep_for(25ms);
 		} while (ProcessUtil::isProcessOpen(procList, proc));
 	}
+}
+
+const auto getSystem32Directory = []() -> std::wstring
+{
+	wchar_t buf[MAX_PATH];
+	GetSystemDirectory(buf, sizeof(buf) / 4);
+
+	return std::wstring(buf);
+};
+
+bool Bypass::map(std::wstring_view strProc, std::wstring_view wstrModName, std::vector<std::uint8_t> vecBuffer, blackbone::eLoadFlags flags) {
+	// Update process list while process is not opened
+	ProcessUtil::waitForProcess(strProc);
+
+	auto procList = ProcessUtil::getProcessList();
+	blackbone::Process bb_proc;
+	bb_proc.Attach(ProcessUtil::getProcessIdByName(procList, strProc), PROCESS_ALL_ACCESS);
+
+	if (bb_proc.core().handle() == nullptr) {
+		logError(L"Handle to %s was null! Restart the process as an administrator.", strProc);
+		return false;
+	}
+
+	// Wait for a process module so we can continue with injection
+	logDebug(L"Waiting for module %s in %s...", wstrModName.data(), strProc.data());
+
+	auto mod_ready = false;
+	while (!mod_ready)
+	{
+		for (const auto& mod : bb_proc.modules().GetAllModules())
+		{
+			if (mod.first.first == wstrModName)
+			{
+				mod_ready = true;
+				break;
+			}
+		}
+
+		if (mod_ready)
+			break;
+
+		std::this_thread::sleep_for(500ms); // 1s? fixes 0xC34... (i think i was calling the patch too early now)
+	}
+
+	// modifies .text section, ez vac ban LOL
+	// plus don't need to LoadLibrary anything after this
+	// Bypassing injection block by csgo (-allow_third_party_software)
+	//if (strProc.find(L"csgo") != std::wstring::npos)
+	//{
+	//	const auto patch_nt_open_file = [&]()
+	//	{
+	//		const auto ntdll_path = string::format(L"%s\\ntdll.dll", getSystem32Directory().data());
+	//		const auto ntdll = LoadLibrary(ntdll_path.data());
+
+	//		if (!ntdll) {
+	//			logError(L"Failed to load ntdll?");
+	//			return false;
+	//		}
+	//		
+
+	//		void* ntopenfile_ptr = GetProcAddress(ntdll, "NtOpenFile");
+
+	//		if (!ntopenfile_ptr) {
+	//			logError(L"Failed to get NtOpenFile proc address?");
+	//			return false;
+	//		}
+
+	//		std::uint8_t restore[5];
+	//		std::memcpy(restore, ntopenfile_ptr, sizeof(restore));
+
+	//		const auto result = bb_proc.memory().Write((std::uintptr_t)ntopenfile_ptr, restore);
+
+	//		if (!NT_SUCCESS(result)) {
+	//			logError(L"Failed to write patch memory!");
+	//			return false;
+	//		}
+
+	//		return true;
+	//	};
+
+	//	if (!patch_nt_open_file()) {
+	//		logError(L"Failed to patch NtOpenFile!");
+	//		return false;
+	//	}
+	//}
+
+	// Resolve PE imports
+	const auto mod_callback = [](blackbone::CallbackType type, void*, blackbone::Process&, const blackbone::ModuleData& modInfo)
+	{
+		if (type == blackbone::PreCallback)
+		{
+			if (modInfo.name == L"user32.dll")
+				return blackbone::LoadData(blackbone::MT_Native, blackbone::Ldr_Ignore);
+		}
+
+		return blackbone::LoadData(blackbone::MT_Default, blackbone::Ldr_Ignore);
+	};
+
+	// Mapping dll to the process
+	const auto call_result = bb_proc.mmap().MapImage(vecBuffer.size(), vecBuffer.data(), false, flags, mod_callback);
+
+	if (!call_result.success())
+	{
+		// https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/596a1078-e883-4972-9bbc-49e60bebca55
+		logError(L"Failed to inject into %s. NT Status: 0x%.8X", strProc.data(), call_result.status);
+		bb_proc.Detach();
+
+		return false;
+	}
+
+	// Free memory and detach from process
+	bb_proc.Detach();
+	logOk(L"Injected into %s successfully!", strProc.data());
+
+	return true;
 }
 
 std::wstring Bypass::getSteamPath() {

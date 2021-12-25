@@ -26,6 +26,10 @@ public:
     MainDlg();
     ~MainDlg();
 
+    vecPEImages getImages() {
+        return _images;
+    }
+
 private:
     /// <summary>
 	/// Load configuration from file
@@ -104,3 +108,5 @@ private:
 
     ctrl::Button _start;           // Start button
 };
+
+inline std::unique_ptr<MainDlg> mainDlg;

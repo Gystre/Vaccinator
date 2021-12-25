@@ -16,7 +16,7 @@
 #include <functional>
 #include <assert.h>
 
-namespace acut
+namespace FileUtil
 {
     template <typename T>
     struct default_delete
@@ -38,7 +38,7 @@ namespace acut
      * Examples:
      *   Reading:
      *     // we are using xml_key_error exceptions
-     *     acut::XmlDoc<char> xml(true);
+     *     FileUtil::XmlDoc<char> xml(true);
      *
      *     // parse file and throw on any errors
      *     xml.read_from_file(L"path/to/document.xml");
@@ -65,7 +65,7 @@ namespace acut
      *
      *   Writing:
      *     // we are using exception for now
-     *     acut::XmlDoc<char> xml(true);
+     *     FileUtil::XmlDoc<char> xml(true);
      *
      *     // create empty document
      *     xml.create_document();
@@ -136,11 +136,11 @@ namespace acut
          * Get value by key. Key has the form "ElementName1.ElementName2.ElementNameN
          * or "ElementName1.ElementName2.<AttributeName>".
          * If T is int, long long, unsigned long long or double, tries to convert
-         * the value to this type and throws acut::xml_general_error if conversino failes.
+         * the value to this type and throws FileUtil::xml_general_error if conversino failes.
          * Otherwise, uses std::operator>>() to read and return the value
          * of type T.
-         * Throws acut::xml_general_error if XML document is not initialized or value
-         * can't be converted and acut::xml_key_error if key is empty or does not exist.
+         * Throws FileUtil::xml_general_error if XML document is not initialized or value
+         * can't be converted and FileUtil::xml_key_error if key is empty or does not exist.
          */
         template <typename T>
         T get(const string_t& key)
@@ -208,7 +208,7 @@ namespace acut
 
         /*
          * Get for pointers to c-style strings.
-         * Throws: same as usual get() function + acut::xml_general_error if dest_size is not
+         * Throws: same as usual get() function + FileUtil::xml_general_error if dest_size is not
          * enough to store found value.
          */
         bool get(const string_t& key, Ch* dest, int dest_size)
@@ -222,7 +222,7 @@ namespace acut
                     throw xml_general_error("Destination buffer is too small");
 
                 memcpy(dest, pair.first, pair.second * sizeof(Ch));
-                dest[pair.second] = acut::ensure_tchar<Ch>('\0');
+                dest[pair.second] = FileUtil::ensure_tchar<Ch>('\0');
 
                 return true;
             }
@@ -237,8 +237,8 @@ namespace acut
          * Set the value of the key. Keys are same as in get() function.
          * If any of the leaf or intermediate nodes do not exist, they are created.
          * Uses std::operator<<() to convert the argument to string.
-         * Throws acut::xml_general_error if XML document is not initialized and
-         * acut::xml_key_error if key is empty.
+         * Throws FileUtil::xml_general_error if XML document is not initialized and
+         * FileUtil::xml_key_error if key is empty.
          */
         template <typename T>
         bool set(const string_t& key, const T& value)
@@ -297,12 +297,12 @@ namespace acut
         public:
             Path(const string_t& key)
             {
-                acut::split(key, &path_, acut::ensure_tchar<Ch>("."));
+                FileUtil::split(key, &path_, FileUtil::ensure_tchar<Ch>("."));
                 if (path_.size() == 0)
                     last_is_attribute_ = false;
                 else
-                    last_is_attribute_ = (path_.back().front() == acut::ensure_tchar<Ch>('<') &&
-                                          path_.back().back() == acut::ensure_tchar<Ch>('>') );
+                    last_is_attribute_ = (path_.back().front() == FileUtil::ensure_tchar<Ch>('<') &&
+                                          path_.back().back() == FileUtil::ensure_tchar<Ch>('>') );
             }
 
             const string_t& operator[](size_t index) const
@@ -398,7 +398,7 @@ namespace acut
                 auto attr = node->first_attribute(attr_name.c_str(), attr_name.size());
 
                 if (!attr)
-                    throw xml_key_error("No such attribute '" + acut::ensure_tchar<char>(attr_name.c_str()) + "'");
+                    throw xml_key_error("No such attribute '" + FileUtil::ensure_tchar<char>(attr_name.c_str()) + "'");
 
                 return std::make_pair(attr->value(), attr->value_size());
             }
@@ -421,7 +421,7 @@ namespace acut
                 node = node->first_node(key[i].c_str(), key[i].size());
 
                 if (!node)
-                    throw xml_key_error("No such node '" + acut::ensure_tchar<char>(key[i].c_str()) + "'");
+                    throw xml_key_error("No such node '" + FileUtil::ensure_tchar<char>(key[i].c_str()) + "'");
             }
 
             return node;
@@ -600,13 +600,13 @@ namespace acut
         explicit XmlDoc(bool use_except = true)
             : XmlWrap<Ch>(&doc_, &noex_, nullptr)
             , noex_(!use_except)
-            , doc_(nullptr, acut::noop_delete<xml_document>())
+            , doc_(nullptr, FileUtil::noop_delete<xml_document>())
             , buffer_()
         {}
 
         /*
          * Read XML document from file.
-         * Throws std::runtime_error if couldn't read the file or acut::xml_general_error if
+         * Throws std::runtime_error if couldn't read the file or FileUtil::xml_general_error if
          * errors were encountered while parsing the file.
          */
         void read_from_file(const std::wstring& filename);
@@ -616,7 +616,7 @@ namespace acut
          */
         void read_from_string(const string_t& content)
         {
-            doc_ = xml_ptr(new xml_document, acut::default_delete<xml_document>());
+            doc_ = xml_ptr(new xml_document, FileUtil::default_delete<xml_document>());
             buffer_.assign(std::begin(content), std::end(content));
             parse_buffer(&buffer_[0]);
             XmlWrap<Ch>::set_current(doc_.get());
@@ -628,7 +628,7 @@ namespace acut
          */
         void read_from_buffer(Ch* buffer)
         {
-            doc_ = xml_ptr(new xml_document, acut::default_delete<xml_document>());
+            doc_ = xml_ptr(new xml_document, FileUtil::default_delete<xml_document>());
             parse_buffer(buffer);
             XmlWrap<Ch>::set_current(doc_.get());
         }
@@ -640,9 +640,9 @@ namespace acut
         void use_document(xml_document* doc, bool own = false)
         {
             if (own)
-                doc_ = xml_ptr(doc, acut::default_delete<xml_document>());
+                doc_ = xml_ptr(doc, FileUtil::default_delete<xml_document>());
             else
-                doc_ = xml_ptr(doc, acut::noop_delete<xml_document>());
+                doc_ = xml_ptr(doc, FileUtil::noop_delete<xml_document>());
 
             XmlWrap<Ch>::set_current(doc_.get());
         }
@@ -652,13 +652,13 @@ namespace acut
          */
         void create_document()
         {
-            doc_ = xml_ptr(new xml_document, acut::default_delete<xml_document>());
+            doc_ = xml_ptr(new xml_document, FileUtil::default_delete<xml_document>());
             XmlWrap<Ch>::set_current(doc_.get());
         }
 
         /*
          * Write document to stream.
-         * Throws acut::xml_general_error if XML document is not initialized.
+         * Throws FileUtil::xml_general_error if XML document is not initialized.
          */
         template<class CharT, class Traits>
         void write_document(std::basic_ostream<CharT, Traits>& os)
@@ -671,7 +671,7 @@ namespace acut
 
         /*
          * Write document to file with name 'filename', overwriting it.
-         * Throws acut::xml_general_error if XML document is not initialized.
+         * Throws FileUtil::xml_general_error if XML document is not initialized.
          */
         void write_document(const std::wstring& filename)
         {
@@ -682,7 +682,7 @@ namespace acut
             output << *doc_;
 
             std::ofstream outfile(filename);
-            std::string utf8_string = acut::ensure_tchar<char>(output.str().c_str());
+            std::string utf8_string = FileUtil::ensure_tchar<char>(output.str().c_str());
             outfile.write(utf8_string.c_str(), utf8_string.size());
             outfile.close();
         }
@@ -740,17 +740,17 @@ namespace acut
     {
         try
         {
-            doc_ = xml_ptr(new xml_document, acut::default_delete<xml_document>());
+            doc_ = xml_ptr(new xml_document, FileUtil::default_delete<xml_document>());
 
-            if (!acut::read_file(filename, buffer_))
-                throw std::runtime_error("Failed to read file: " + acut::ensure_tchar<char>(filename.c_str()));
+            if (!FileUtil::read_file(filename, buffer_))
+                throw std::runtime_error("Failed to read file: " + FileUtil::ensure_tchar<char>(filename.c_str()));
 
             parse_buffer(&buffer_[0]);
             XmlWrap<char>::set_current(doc_.get());
         }
         catch (const rapidxml::parse_error& ex)
         {
-            throw xml_general_error("Error parsing file '" + acut::ensure_tchar<char>(filename.c_str()) + "': " + ex.what());
+            throw xml_general_error("Error parsing file '" + FileUtil::ensure_tchar<char>(filename.c_str()) + "': " + ex.what());
         }
     }
 
@@ -759,11 +759,11 @@ namespace acut
     {
         try
         {
-            doc_ = xml_ptr(new xml_document, acut::default_delete<xml_document>());
+            doc_ = xml_ptr(new xml_document, FileUtil::default_delete<xml_document>());
 
             std::string utf8_content;
-            if (!acut::read_file(filename, utf8_content))
-                throw std::runtime_error("Failed to read file: " + acut::ensure_tchar<char>(filename.c_str()));
+            if (!FileUtil::read_file(filename, utf8_content))
+                throw std::runtime_error("Failed to read file: " + FileUtil::ensure_tchar<char>(filename.c_str()));
 
             buffer_ = blackbone::Utils::UTF8ToWstring( utf8_content );
             parse_buffer(&buffer_[0]);
@@ -771,7 +771,7 @@ namespace acut
         }
         catch (const rapidxml::parse_error& ex)
         {
-            throw xml_general_error("Error parsing file '" + acut::ensure_tchar<char>(filename.c_str()) + "': " + ex.what());
+            throw xml_general_error("Error parsing file '" + FileUtil::ensure_tchar<char>(filename.c_str()) + "': " + ex.what());
         }
     }
 }

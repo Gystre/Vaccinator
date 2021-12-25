@@ -16,34 +16,53 @@ bool read_helper(const std::wstring& path, Container& container)
 
     container.assign((std::istreambuf_iterator<typename Container::value_type>(f)),
                       std::istreambuf_iterator<typename Container::value_type>());
-    container.push_back(acut::ensure_tchar<typename Container::value_type>('\0'));
+    container.push_back(FileUtil::ensure_tchar<typename Container::value_type>('\0'));
 
     return true;
 }
 
 
-bool acut::read_file(const std::wstring& path, std::string& buffer)
+bool FileUtil::read_file(const std::wstring& path, std::string& buffer)
 {
     return read_helper(path, buffer);
 }
 
-bool acut::read_file(const std::wstring& path, std::vector<char>& buffer)
+bool FileUtil::read_file(const std::wstring& path, std::vector<char>& buffer)
 {
     return read_helper(path, buffer);
 }
 
-bool acut::read_file(const std::wstring& path, std::wstring& buffer)
+bool FileUtil::read_file(const std::wstring& path, std::wstring& buffer)
 {
     return read_helper(path, buffer);
 }
 
-bool acut::read_file(const std::wstring& path, std::vector<wchar_t>& buffer)
+bool FileUtil::read_file(const std::wstring& path, std::vector<wchar_t>& buffer)
 {
     return read_helper(path, buffer);
 }
 
-bool acut::file_exists( const std::wstring& filename )
+bool FileUtil::file_exists( const std::wstring& filename )
 {
     return (GetFileAttributesW( filename.c_str() ) != INVALID_FILE_ATTRIBUTES);
 }
 
+bool FileUtil::readFile(const std::filesystem::path& path, std::vector<std::uint8_t>* out_buffer) {
+    std::ifstream file(path, std::ios::binary);
+    if (file.fail())
+        return false;
+
+    out_buffer->assign((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+    file.close();
+
+    return true;
+
+}
+
+std::wstring FileUtil::getCwd() {
+    TCHAR buffer[MAX_PATH] = { 0 };
+    GetModuleFileName(NULL, buffer, MAX_PATH);
+    std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+    return std::wstring(buffer).substr(0, pos);
+}

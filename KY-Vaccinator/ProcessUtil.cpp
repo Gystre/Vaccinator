@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "ProcessUtil.h"
+#include <iostream>
+#include "Logger.h"
 
 namespace string
 {
@@ -53,6 +55,7 @@ namespace ProcessUtil {
 					continue;
 			}
 
+			//open a handle to the process to see if it's open
 			const auto h_process = OpenProcess(PROCESS_VM_READ, false, ctx.first);
 			if (h_process != nullptr)
 			{
@@ -104,6 +107,16 @@ namespace ProcessUtil {
 		}
 
 		return executed;
+	}
+
+	void waitForProcess(std::wstring_view procName) {
+		logDebug(L"Waiting for %s to open", procName);
+
+		auto procList = ProcessUtil::getProcessList();
+		while (!ProcessUtil::isProcessOpen(procList, procName)) {
+			procList = ProcessUtil::getProcessList();
+			std::this_thread::sleep_for(50ms);
+		}
 	}
 
 	std::uint32_t getProcessIdByName(const std::vector<std::pair<std::uint32_t, std::wstring>>& vec_processes, std::wstring_view str_proc)
